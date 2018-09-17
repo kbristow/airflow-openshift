@@ -1,0 +1,263 @@
+{
+    "kind": "Template",
+    "apiVersion": "v1",
+    "metadata": {
+        "name": "airflow",
+        "creationTimestamp": null,
+        "annotations": {
+            "description": "Airflow base setup",
+            "openshift.io/display-name": "Airflow",
+            "openshift.io/long-description": "This template deploys an Airflow webserver and scheduler.",
+            "tags": "airflow"
+        }
+    },
+    "message": "The Airflow webserver and scheduler have been deployed to your project",
+    "objects": [
+        {
+            "apiVersion": "v1",
+            "kind": "PersistentVolumeClaim",
+            "metadata": {
+                "name": "airflow"
+            },
+            "spec": {
+                "accessModes": [
+                    "ReadWriteMany"
+                ],
+                "resources": {
+                    "requests": {
+                        "storage": "${VOLUME_CAPACITY}"
+                    }
+                }
+            }
+        },
+        {
+            "kind": "DeploymentConfig",
+            "apiVersion": "v1",
+            "metadata": {
+                "name": "airflow-webserver"
+            },
+            "spec": {
+                "template": {
+                    "metadata": {
+                        "labels": {
+                            "app": "airflow",
+                            "tier": "web"
+                        }
+                    },
+                    "spec": {
+                        "volumes":[
+                            {
+                                "name": "airflow",
+                                "persistentVolumeClaim": {
+                                    "claimName": "airflow"
+                                }
+                            }
+                        ],
+                        "containers": [
+                            {
+                                "name": "airflow-webserver",
+                                "image": "airflow-webserver",
+                                "ports": [
+                                    {
+                                        "containerPort": 8080,
+                                        "name": "http",
+                                        "protocol": "TCP"
+                                    }
+                                ],
+                                "env": [
+                                    {
+                                        "name": "AIRFLOW__CORE__SQL_ALCHEMY_CONN",
+                                        "value": "postgresql+psycopg2://airflow:airflow@postgres:5432/airflow"
+                                    }
+                                ],
+                                "volumeMounts": [
+                                    {
+                                        "mountPath": "/usr/local/airflow",
+                                        "name": "airflow"
+                                    }
+                                ],
+                                "livenessProbe": {
+                                    "httpGet": {
+                                        "path": "/",
+                                        "port": 8080
+                                    },
+                                    "initialDelaySeconds": 240,
+                                    "periodsSeconds": 60
+                                }
+                            }
+                        ]
+                    }
+                },
+                "replicas": 1,
+                "selector": {
+                    "app": "airflow",
+                    "tier": "web"
+                },
+                "triggers": [
+                    {
+                        "type": "ConfigChange"
+                    },
+                    {
+                        "type": "ImageChange",
+                        "imageChangeParams": {
+                            "automatic": true,
+                            "containerNames": [
+                                "airflow-webserver"
+                            ],
+                            "from": {
+                                "kind": "ImageStreamTag",
+                                "name": "airflow-webserver:latest"
+                            }
+                        }
+                    }
+                ],
+                "strategy": {
+                    "type": "Rolling"
+                }
+            }
+        },
+        {
+            "apiVersion": "v1",
+            "kind": "Service",
+            "metadata": {
+                "name": "airflow-webserver"
+            },
+            "spec": {
+                "ports": [
+                    {
+                        "name": "http",
+                        "port": 8080,
+                        "protocol": "TCP",
+                        "targetPort": "http"
+                    }
+                ],
+                "selector": {
+                    "app": "airflow",
+                    "tier": "web"
+                },
+                "sessionAffinity": "None",
+                "type": "ClusterIP"
+            }
+        },
+        {
+            "apiVersion": "v1",
+            "kind": "Route",
+            "metadata": {
+                "name": "airflow-webserver"
+            },
+            "spec": {
+                "to": {
+                    "kind": "Service",
+                    "name": "airflow-webserver"
+                }
+            }
+        },
+        {
+            "kind": "DeploymentConfig",
+            "apiVersion": "v1",
+            "metadata": {
+                "name": "airflow-scheduler"
+            },
+            "spec": {
+                "template": {
+                    "metadata": {
+                        "labels": {
+                            "app": "airflow",
+                            "tier": "scheduler"
+                        }
+                    },
+                    "spec": {
+                        "volumes":[
+                            {
+                                "name": "airflow",
+                                "persistentVolumeClaim": {
+                                    "claimName": "airflow"
+                                }
+                            }
+                        ],
+                        "containers": [
+                            {
+                                "name": "airflow-scheduler",
+                                "image": "airflow-scheduler",
+                                "env": [
+                                    {
+                                        "name": "AIRFLOW__CORE__SQL_ALCHEMY_CONN",
+                                        "value": "postgresql+psycopg2://airflow:airflow@postgres:5432/airflow"
+                                    }
+                                ],
+                                "volumeMounts": [
+                                    {
+                                        "mountPath": "/usr/local/airflow",
+                                        "name": "airflow"
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                },
+                "replicas": 0,
+                "selector": {
+                    "app": "airflow",
+                    "tier": "scheduler"
+                },
+                "triggers": [
+                    {
+                        "type": "ConfigChange"
+                    },
+                    {
+                        "type": "ImageChange",
+                        "imageChangeParams": {
+                            "automatic": true,
+                            "containerNames": [
+                                "airflow-scheduler"
+                            ],
+                            "from": {
+                                "kind": "ImageStreamTag",
+                                "name": "airflow-scheduler:latest"
+                            }
+                        }
+                    }
+                ],
+                "strategy": {
+                    "type": "Rolling"
+                }
+            }
+        },
+        {
+            "apiVersion": "v1",
+            "kind": "Service",
+            "metadata": {
+                "name": "airflow-scheduler"
+            },
+            "spec": {
+                "ports": [
+                    {
+                        "name": "http",
+                        "port": 8080,
+                        "protocol": "TCP",
+                        "targetPort": "http"
+                    }
+                ],
+                "selector": {
+                    "app": "airflow",
+                    "tier": "scheduler"
+                },
+                "sessionAffinity": "None",
+                "type": "ClusterIP"
+            }
+        }
+    ],
+    "parameters": [
+        {
+            "name": "VOLUME_CAPACITY",
+            "displayName": "Volume Capacity",
+            "description": "Volume space available for data, e.g. 512Mi, 2Gi.",
+            "value": "2Gi",
+            "required": true
+        }
+    ],
+    "labels": {
+        "app": "airflow",
+        "template": "airflow-template"
+    }
+}
