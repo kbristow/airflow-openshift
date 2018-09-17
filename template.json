@@ -56,7 +56,7 @@
                         "containers": [
                             {
                                 "name": "airflow-webserver",
-                                "image": "airflow-webserver",
+                                "image": "${WEBSERVER_IMAGE_NAME}",
                                 "ports": [
                                     {
                                         "containerPort": 8080,
@@ -67,7 +67,7 @@
                                 "env": [
                                     {
                                         "name": "AIRFLOW__CORE__SQL_ALCHEMY_CONN",
-                                        "value": "postgresql+psycopg2://airflow:airflow@postgres:5432/airflow"
+                                        "value": "${DB_CONNECTION_STRING}"
                                     }
                                 ],
                                 "volumeMounts": [
@@ -106,7 +106,7 @@
                             ],
                             "from": {
                                 "kind": "ImageStreamTag",
-                                "name": "airflow-webserver:latest"
+                                "name": "${WEBSERVER_IMAGE_NAME}:${WEBSERVER_IMAGE_VERSION}"
                             }
                         }
                     }
@@ -178,11 +178,11 @@
                         "containers": [
                             {
                                 "name": "airflow-scheduler",
-                                "image": "airflow-scheduler",
+                                "image": "${SCHEDULER_IMAGE_NAME}",
                                 "env": [
                                     {
                                         "name": "AIRFLOW__CORE__SQL_ALCHEMY_CONN",
-                                        "value": "postgresql+psycopg2://airflow:airflow@postgres:5432/airflow"
+                                        "value": "${DB_CONNECTION_STRING}"
                                     }
                                 ],
                                 "volumeMounts": [
@@ -213,7 +213,7 @@
                             ],
                             "from": {
                                 "kind": "ImageStreamTag",
-                                "name": "airflow-scheduler:latest"
+                                "name": "${SCHEDULER_IMAGE_NAME}:${SCHEDULER_IMAGE_VERSION}"
                             }
                         }
                     }
@@ -248,6 +248,41 @@
         }
     ],
     "parameters": [
+        {
+            "name": "WEBSERVER_IMAGE_NAME",
+            "displayName": "Airflow Webserver Image",
+            "description": "ImageStream name used to deploy the Airflow webserver",
+            "value": "airflow-webserver",
+            "required": true
+        },
+        {
+            "name": "WEBSERVER_IMAGE_VERSION",
+            "displayName": "Airflow Webserver Version",
+            "description": "ImageStream version used to deploy the Airflow webserver",
+            "value": "latest",
+            "required": true
+        },
+        {
+            "name": "SCHEDULER_IMAGE_NAME",
+            "displayName": "Airflow Scheduler Image",
+            "description": "ImageStream name used to deploy the Airflow scheduler",
+            "value": "airflow-scheduler",
+            "required": true
+        },
+        {
+            "name": "SCHEDULER_IMAGE_VERSION",
+            "displayName": "Airflow Webserver Version",
+            "description": "ImageStream version used to deploy the Airflow scheduler",
+            "value": "latest",
+            "required": true
+        },
+        {
+            "name": "DB_CONNECTION_STRING",
+            "displayName": "Airflow  Database connection string",
+            "description": "Connection string for db backing Airflow",
+            "value": "postgresql+psycopg2://airflow:airflow@postgres:5432/airflow",
+            "required": true
+        },
         {
             "name": "VOLUME_CAPACITY",
             "displayName": "Volume Capacity",
