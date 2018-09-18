@@ -24,7 +24,7 @@ def generate_uuid(**context):
     context["ti"].xcom_push(key="uuid_str", value=str(new_uuid))
     context["ti"].xcom_push(key="uuid_hex", value=new_uuid.hex)
 
-def printReport(**context):
+def print_report(**context):
     uuid_str = context["ti"].xcom_pull(key="uuid_str", task_ids="uuid")
     uuid_hex = context["ti"].xcom_pull(key="uuid_hex", task_ids="uuid")
     run_date = context["ti"].xcom_pull(key=None, task_ids="date")
@@ -46,6 +46,6 @@ echo_task = BashOperator(
     task_id="echo", dag=dag, bash_command="echo hello", xcom_push=True)
 
 report_task = PythonOperator(
-    task_id="report", dag=dag, python_callable=printReport)
+    task_id="report", dag=dag, python_callable=print_report)
 
 report_task.set_upstream([date_task, uuid_task, echo_task])
