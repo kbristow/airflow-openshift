@@ -16,7 +16,7 @@ COPY ./scripts/entrypoint.sh /entrypoint.sh
 
 RUN chown -R airflow: ${AIRFLOW_HOME}
 
-USER ${USER_ID}}
+USER ${USER_ID}
 WORKDIR ${AIRFLOW_HOME}
 ENTRYPOINT ["/entrypoint.sh"]
 
